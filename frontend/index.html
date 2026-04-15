@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Controle de Estoque</title>
+    <style>
+        body {
+            font-family: Arial;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        input, button {
+            margin: 5px;
+            padding: 8px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+
+        li {
+            margin: 5px 0;
+        }
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            background: #f4f4f4;
+            padding: 8px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Controle de Estoque</h1>
+
+<p id="total"></p>
+
+<input id="busca" placeholder="Buscar produto..." oninput="filtrar()">
+<input id="nome" placeholder="Produto">
+<input id="quantidade" type="number" placeholder="Quantidade">
+<button onclick="adicionar()">Adicionar</button>
+
+<ul id="lista"></ul>
+
+<script>
+const API = "http://localhost:8001";
+
+async function editar(id, nome, quantidade) {
+    const novoNome = prompt("Novo nome:", nome);
+    const novaQtd = prompt("Nova quantidade:", quantidade);
+
+    if (!novoNome || isNaN(novaQtd)) return;
+
+    await fetch(API + "/produtos/" + id, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            nome: novoNome,
+            quantidade: parseInt(novaQtd)
+        })
+    });
+
+    listar();
+}
+
+async function adicionar() {
+    const nome = document.getElementById("nome").value;
+    const quantidade = parseInt(document.getElementById("quantidade").value);
+
+    if (!nome || isNaN(quantidade)) {
+        alert("Preencha corretamente!");
+        return;
+    }
+
+    await fetch(API + "/produtos", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ nome, quantidade })
+    });
+
+    document.getElementById("nome").value = "";
+    document.getElementById("quantidade").value = "";
+
+    listar();
+}
+
+async function remover(id) {
+    await fetch(API + "/produtos/" + id, {
+        method: "DELETE"
+    });
+
+    listar();
+}
+
+async function listar() {
+    const res = await fetch(API + "/produtos");
+    const data = await res.json();
+    document.getElementById("total").innerText =
+    "Total de produtos: " + data.length;
+    const lista = document.getElementById("lista");
+    lista.innerHTML = "";
+
+    data.forEach(p => {
+        const li = document.createElement("li");
+        let alerta = p.quantidade < 5 ? "⚠️ ESTOQUE BAIXO" : "";
+        li.innerHTML = `
+            <span style="color:${p.quantidade < 5 ? 'red' : 'black'}">
+                ${p.nome} - ${p.quantidade} ${alerta}
+            </span>
+            <div>
+                <button onclick="editar(${p.id}, '${p.nome}', ${p.quantidade})">✏️</button>
+                <button onclick="remover(${p.id})">X</button>
+            </div>
+        `;
+        lista.appendChild(li);
+    });
+}
+
+function filtrar() {
+    const termo = document.getElementById("busca").value.toLowerCase();
+    const itens = document.querySelectorAll("li");
+
+    itens.forEach(li => {
+        li.style.display = li.innerText.toLowerCase().includes(termo)
+            ? ""
+            : "none";
+    });
+}
+
+listar();
+</script>
+
+</body>
+</html>
