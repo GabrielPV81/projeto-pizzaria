@@ -1,138 +1,128 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Controle de Estoque</title>
-    <style>
-        body {
-            font-family: Arial;
-            max-width: 600px;
-            margin: auto;
-        }
-
-        input, button {
-            margin: 5px;
-            padding: 8px;
-        }
-
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-        }
-
-        li {
-            margin: 5px 0;
-        }
-
-        li {
-            display: flex;
-            justify-content: space-between;
-            background: #f4f4f4;
-            padding: 8px;
-            border-radius: 5px;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Pizzaria 🍕</title>
 </head>
+
 <body>
 
-<h1>Controle de Estoque</h1>
+<h1>🍕 Sistema de Pizzaria</h1>
 
-<p id="total"></p>
+<h2>Ingredientes</h2>
+<input id="ing_nome" placeholder="Nome">
+<input id="ing_qtd" type="number" placeholder="Qtd">
+<button onclick="addIngrediente()">Adicionar</button>
+<ul id="listaIngredientes"></ul>
 
-<input id="busca" placeholder="Buscar produto..." oninput="filtrar()">
-<input id="nome" placeholder="Produto">
-<input id="quantidade" type="number" placeholder="Quantidade">
-<button onclick="adicionar()">Adicionar</button>
+<h2>Pizzas</h2>
+<input id="pizza_nome" placeholder="Nome">
+<input id="pizza_ing" placeholder="Ingredientes (ex: queijo,molho)">
+<button onclick="addPizza()">Cadastrar</button>
+<ul id="listaPizzas"></ul>
 
-<ul id="lista"></ul>
+<h2>Pedidos</h2>
+<input id="pedido_nome" placeholder="Nome da pizza">
+<button onclick="fazerPedido()">Fazer pedido</button>
+
+<p id="msg"></p>
 
 <script>
+
 const API = "http://localhost:8001";
 
-async function editar(id, nome, quantidade) {
-    const novoNome = prompt("Novo nome:", nome);
-    const novaQtd = prompt("Nova quantidade:", quantidade);
-
-    if (!novoNome || isNaN(novaQtd)) return;
-
-    await fetch(API + "/produtos/" + id, {
-        method: "PUT",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            nome: novoNome,
-            quantidade: parseInt(novaQtd)
-        })
-    });
-
-    listar();
-}
-
-async function adicionar() {
-    const nome = document.getElementById("nome").value;
-    const quantidade = parseInt(document.getElementById("quantidade").value);
-
-    if (!nome || isNaN(quantidade)) {
-        alert("Preencha corretamente!");
-        return;
-    }
-
-    await fetch(API + "/produtos", {
+// INGREDIENTES
+async function addIngrediente() {
+    await fetch(API + "/ingredientes", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ nome, quantidade })
+        body: JSON.stringify({
+            nome: ing_nome.value,
+            quantidade: parseInt(ing_qtd.value)
+        })
     });
-
-    document.getElementById("nome").value = "";
-    document.getElementById("quantidade").value = "";
-
-    listar();
+    listarIngredientes();
 }
 
-async function remover(id) {
-    await fetch(API + "/produtos/" + id, {
-        method: "DELETE"
-    });
-
-    listar();
-}
-
-async function listar() {
-    const res = await fetch(API + "/produtos");
+async function listarIngredientes() {
+    const res = await fetch(API + "/ingredientes");
     const data = await res.json();
-    document.getElementById("total").innerText =
-    "Total de produtos: " + data.length;
-    const lista = document.getElementById("lista");
-    lista.innerHTML = "";
 
+    listaIngredientes.innerHTML = "";
     data.forEach(p => {
         const li = document.createElement("li");
-        let alerta = p.quantidade < 5 ? "⚠️ ESTOQUE BAIXO" : "";
         li.innerHTML = `
-            <span style="color:${p.quantidade < 5 ? 'red' : 'black'}">
-                ${p.nome} - ${p.quantidade} ${alerta}
-            </span>
-            <div>
-                <button onclick="editar(${p.id}, '${p.nome}', ${p.quantidade})">✏️</button>
-                <button onclick="remover(${p.id})">X</button>
-            </div>
+            ${p.nome} - ${p.quantidade}
+            <input type="number" id="qtd-${p.id}" placeholder="Nova qtd">
+            <button onclick="editar(${p.id})">Atualizar</button>
         `;
         lista.appendChild(li);
     });
 }
 
-function filtrar() {
-    const termo = document.getElementById("busca").value.toLowerCase();
-    const itens = document.querySelectorAll("li");
+async function editar(id) {
+    const qtd = document.getElementById(`qtd-${id}`).value;
 
-    itens.forEach(li => {
-        li.style.display = li.innerText.toLowerCase().includes(termo)
-            ? ""
-            : "none";
+    await fetch(API + `/ingredientes/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantidade: qtd })
+    });
+
+    carregar();
+}
+
+// PIZZAS
+async function addPizza() {
+    await fetch(API + "/pizzas", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            nome: pizza_nome.value,
+            ingredientes: pizza_ing.value
+        })
+    });
+    listarPizzas();
+}
+
+async function listarPizzas() {
+    const res = await fetch(API + "/pizzas");
+    const data = await res.json();
+
+    listaPizzas.innerHTML = "";
+    data.forEach(p => {
+        listaPizzas.innerHTML += `<li>${p.nome} (${p.ingredientes})</li>`;
     });
 }
 
-listar();
+// PEDIDO
+async function fazerPedido() {
+    const res = await fetch(API + "/pedidos", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            pizza: pedido_nome.value
+        })
+    });
+
+    const data = await res.json();
+
+    // 🔥 trata sucesso ou erro
+    if (!res.ok) {
+        msg.innerText = data.erro;
+        msg.style.color = "red";
+        return;
+    }
+
+    msg.innerText = data.msg;
+    msg.style.color = "green";
+
+    listarIngredientes();
+}
+
+listarIngredientes();
+listarPizzas();
+
 </script>
 
 </body>
