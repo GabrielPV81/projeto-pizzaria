@@ -22,7 +22,7 @@
 <ul id="listaPizzas"></ul>
 
 <h2>Pedidos</h2>
-<input id="pedido_nome" placeholder="Nome da pizza">
+<select id="pedido_nome"></select>
 <button onclick="fazerPedido()">Fazer pedido</button>
 
 <p id="msg"></p>
@@ -83,6 +83,7 @@ async function addPizza() {
         })
     });
     listarPizzas();
+    carregarDropdownPizzas();
 }
 
 async function listarPizzas() {
@@ -96,6 +97,20 @@ async function listarPizzas() {
 }
 
 // PEDIDO
+async function carregarDropdownPizzas() {
+    const res = await fetch(API + "/pizzas");
+    const data = await res.json();
+
+    pedido_nome.innerHTML = ""; // limpa
+
+    data.forEach(p => {
+        const option = document.createElement("option");
+        option.value = p.nome;
+        option.text = p.nome;
+        pedido_nome.appendChild(option);
+    });
+}
+
 async function fazerPedido() {
     const res = await fetch(API + "/pedidos", {
         method: "POST",
@@ -120,6 +135,7 @@ async function fazerPedido() {
     listarIngredientes();
 }
 
+carregarDropdownPizzas();
 listarIngredientes();
 listarPizzas();
 
