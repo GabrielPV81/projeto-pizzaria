@@ -57,14 +57,24 @@ def listar_ingredientes():
 @app.route('/ingredientes', methods=['POST'])
 def adicionar_ingrediente():
     data = request.json
+
+    if not data:
+        return jsonify({"erro": "JSON não enviado"}), 400
+
+    if "nome" not in data or "quantidade" not in data:
+        return jsonify({"erro": "Dados incompletos"}), 400
+
     conn = conectar()
     cursor = conn.cursor()
+
     cursor.execute(
         "INSERT INTO ingredientes (nome, quantidade) VALUES (?, ?)",
         (data["nome"], data["quantidade"])
     )
+
     conn.commit()
     conn.close()
+
     return jsonify({"msg": "Ingrediente adicionado"})
 
 @app.route('/ingredientes/<int:id>', methods=['PUT'])

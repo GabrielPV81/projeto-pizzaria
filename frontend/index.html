@@ -56,7 +56,7 @@ async function listarIngredientes() {
             <input type="number" id="qtd-${p.id}" placeholder="Nova qtd">
             <button onclick="editar(${p.id})">Atualizar</button>
         `;
-        lista.appendChild(li);
+        listaIngredientes.appendChild(li);
     });
 }
 
@@ -69,7 +69,7 @@ async function editar(id) {
         body: JSON.stringify({ quantidade: qtd })
     });
 
-    carregar();
+    listarIngredientes();
 }
 
 // PIZZAS
