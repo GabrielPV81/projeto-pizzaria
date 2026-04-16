@@ -39,7 +39,7 @@ Frontend (HTML/JS) → API REST (Flask) → Banco de Dados (SQLite)
 
 ## Como executar o projeto
 - git clone https://github.com/GabrielPV81/projeto-pizzaria.git
-- cd projeto-final
+- cd projeto-pizzaria
 - docker compose up --build
 - Frontend: http://localhost:8080
 - Backend: http://localhost:8001
